@@ -13,10 +13,11 @@ import (
 )
 
 type settings struct {
-	url     string
-	port    string
-	namelen int
-	key     string
+	url       string
+	port      string
+	namelen   int
+	key       string
+	storepath string
 }
 
 func randName(n int) string {
@@ -44,9 +45,10 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	newFile := "uploads/" + randName(5) + ext
-	os.WriteFile(newFile, fileBytes, 0644)
-	log.Printf("wrote: %+v", newFile)
+	newFile := randName(5) + ext
+	diskFile := filepath.Join(s.storepath, newFile)
+	os.WriteFile(diskFile, fileBytes, 0644)
+	log.Printf("wrote: %+v", diskFile)
 
 	fileUrl := s.url + "/" + newFile
 	fmt.Fprintf(w, "%v", fileUrl)
@@ -55,6 +57,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 func (s *settings) readSettings() {
 	flag.StringVar(&s.url, "url", "localhost", "url for fsrv to serve files")
 	flag.StringVar(&s.port, "port", "9393", "port to listen on")
+	flag.StringVar(&s.storepath, "storepath", "uploads", "path to store uploaded files")
 	flag.IntVar(&s.namelen, "namelen", 5, "length of random filename")
 	flag.StringVar(&s.key, "key", "secret", "secret key; generate this yourself")
 	flag.Parse()
