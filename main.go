@@ -30,6 +30,13 @@ func randName(n int) string {
 }
 
 func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
+	key := r.FormValue("key")
+	fmt.Println(key)
+	if key != s.key {
+		fmt.Fprintf(w, "incorrect key")
+		log.Printf("incorrect key: %+v", key)
+		return
+	}
 	r.ParseMultipartForm(10 << 20)
 	file, handler, err := r.FormFile("file")
 	if err != nil {
