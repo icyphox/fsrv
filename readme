@@ -1,0 +1,30 @@
+FSRV
+
+Filehost server for https://x.icyphox.sh.
+
+
+(NON) FEATURES
+
+· Single-user
+· Only handles file upload. Serving is left to the reverse proxy.
+· Bring your own index.html (-index flag)
+· Requires a key to upload. Change the default!
+
+
+USAGE
+
+    Usage of ./fsrv:
+      -index string
+            path to index html file (default "index.html")
+      -key string
+            secret key; generate this yourself (default "secret")
+      -namelen int
+            length of random filename (default 5)
+      -port string
+            port to listen on (default "9393")
+      -storepath string
+            path to store uploaded files (default "uploads")
+      -url string
+            url for fsrv to serve files (default "localhost")
+
+Sample index.html is provided. Edit as required.

@@ -18,6 +18,7 @@ type settings struct {
 	namelen   int
 	key       string
 	storepath string
+	index     string
 }
 
 func randName(n int) string {
@@ -62,7 +63,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 		fileUrl := s.url + "/" + newFile
 		fmt.Fprintf(w, "%v", fileUrl)
 	case "GET":
-		http.ServeFile(w, r, "index.html")
+		http.ServeFile(w, r, s.index)
 	default:
 		fmt.Fprintf(w, "unsupported method")
 	}
@@ -74,6 +75,7 @@ func (s *settings) readSettings() {
 	flag.StringVar(&s.storepath, "storepath", "uploads", "path to store uploaded files")
 	flag.IntVar(&s.namelen, "namelen", 5, "length of random filename")
 	flag.StringVar(&s.key, "key", "secret", "secret key; generate this yourself")
+	flag.StringVar(&s.index, "index", "index.html", "path to index html file")
 	flag.Parse()
 }
 
