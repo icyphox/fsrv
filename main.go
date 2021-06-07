@@ -30,35 +30,42 @@ func randName(n int) string {
 }
 
 func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
-	key := r.FormValue("key")
-	fmt.Println(key)
-	if key != s.key {
-		fmt.Fprintf(w, "incorrect key")
-		log.Printf("incorrect key: %+v", key)
-		return
-	}
-	r.ParseMultipartForm(10 << 20)
-	file, handler, err := r.FormFile("file")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer file.Close()
-	log.Printf("file: %+v\t%+v bytes", handler.Filename, handler.Size)
+	switch r.Method {
+	case "POST":
+		key := r.FormValue("key")
+		fmt.Println(key)
+		if key != s.key {
+			fmt.Fprintf(w, "incorrect key")
+			log.Printf("incorrect key: %+v", key)
+			return
+		}
+		r.ParseMultipartForm(10 << 20)
+		file, handler, err := r.FormFile("file")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer file.Close()
+		log.Printf("file: %+v\t%+v bytes", handler.Filename, handler.Size)
 
-	ext := filepath.Ext(handler.Filename)
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		log.Println(err)
+		ext := filepath.Ext(handler.Filename)
+		fileBytes, err := io.ReadAll(file)
+		if err != nil {
+			log.Println(err)
+		}
+
+		newFile := randName(5) + ext
+		diskFile := filepath.Join(s.storepath, newFile)
+		os.WriteFile(diskFile, fileBytes, 0644)
+		log.Printf("wrote: %+v", diskFile)
+
+		fileUrl := s.url + "/" + newFile
+		fmt.Fprintf(w, "%v", fileUrl)
+	case "GET":
+		http.ServeFile(w, r, "index.html")
+	default:
+		fmt.Fprintf(w, "unsupported method")
 	}
-
-	newFile := randName(5) + ext
-	diskFile := filepath.Join(s.storepath, newFile)
-	os.WriteFile(diskFile, fileBytes, 0644)
-	log.Printf("wrote: %+v", diskFile)
-
-	fileUrl := s.url + "/" + newFile
-	fmt.Fprintf(w, "%v", fileUrl)
 }
 
 func (s *settings) readSettings() {
