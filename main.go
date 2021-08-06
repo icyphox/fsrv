@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -34,6 +35,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		key := r.FormValue("key")
+		useragent := r.Header.Get("User-Agent")
 		fmt.Println(key)
 		if key != s.key {
 			fmt.Fprintf(w, "incorrect key")
@@ -61,7 +63,11 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("wrote: %+v", diskFile)
 
 		fileUrl := s.url + "/" + newFile
-		fmt.Fprintf(w, "%v", fileUrl)
+		if strings.Contains(useragent, "curl/") {
+			fmt.Fprintf(w, "%v", fileUrl)
+		} else {
+			http.Redirect(w, r, fileUrl, http.StatusSeeOther)
+		}
 	case "GET":
 		http.ServeFile(w, r, s.index)
 	default:
