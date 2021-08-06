@@ -14,7 +14,7 @@ import (
 
 type settings struct {
 	url       string
-	port      string
+	addr      string
 	namelen   int
 	key       string
 	storepath string
@@ -40,7 +40,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 			log.Printf("incorrect key: %+v", key)
 			return
 		}
-		r.ParseMultipartForm(10 << 20)
+		r.ParseMultipartForm(20 << 20)
 		file, handler, err := r.FormFile("file")
 		if err != nil {
 			log.Println(err)
@@ -71,7 +71,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 
 func (s *settings) readSettings() {
 	flag.StringVar(&s.url, "url", "localhost", "url for fsrv to serve files")
-	flag.StringVar(&s.port, "port", "9393", "port to listen on")
+	flag.StringVar(&s.addr, "addr", "0.0.0.0:9393", "address to listen on")
 	flag.StringVar(&s.storepath, "storepath", "uploads", "path to store uploaded files")
 	flag.IntVar(&s.namelen, "namelen", 5, "length of random filename")
 	flag.StringVar(&s.key, "key", "secret", "secret key; generate this yourself")
@@ -87,6 +87,6 @@ func main() {
 
 	http.HandleFunc("/", st.uploadFile)
 
-	log.Println("listening on " + st.port)
-	http.ListenAndServe(":"+st.port, nil)
+	log.Println("listening on " + st.addr)
+	http.ListenAndServe(st.addr, nil)
 }
