@@ -36,13 +36,12 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		key := r.FormValue("key")
 		useragent := r.Header.Get("User-Agent")
-		fmt.Println(key)
 		if key != s.key {
 			fmt.Fprintf(w, "incorrect key")
 			log.Printf("incorrect key: %+v", key)
 			return
 		}
-		r.ParseMultipartForm(20 << 20)
+		r.ParseMultipartForm(512 << 20)
 		file, handler, err := r.FormFile("file")
 		if err != nil {
 			log.Println(err)
@@ -61,6 +60,11 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 		diskFile := filepath.Join(s.storepath, newFile)
 		os.WriteFile(diskFile, fileBytes, 0644)
 		log.Printf("wrote: %+v", diskFile)
+		abs, err := filepath.Abs(diskFile)
+		if err != nil {
+			log.Println(err)
+		}
+		runHooks(abs)
 
 		fileUrl := s.url + "/" + newFile
 		if strings.Contains(useragent, "curl/") {
