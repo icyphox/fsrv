@@ -9,6 +9,7 @@ Filehost server for https://x.icyphox.sh.
 · Only handles file upload. Serving is left to the reverse proxy.
 · Bring your own index.html (-index flag)
 · Requires a key to upload. Change the default!
+· Filetype hooks. (See HOOKS)
 
 
 USAGE
@@ -28,3 +29,14 @@ USAGE
             url for fsrv to serve files (default "localhost")
 
 Sample index.html is provided. Edit as required.
+
+
+HOOKS
+
+Hooks can be defined in the 'hooks/' directory for specific filetypes.
+These can be written in any language, provided the file is executable,
+and accepts one argument: the file to execute against.
+
+For example: the hooks/7z.sh file will run against all 7z files, and will
+recieve the filename as an argument ($1). The filetype is determined by
+parsing magic bytes, and not by file extension.
