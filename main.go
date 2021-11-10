@@ -31,10 +31,20 @@ func randName(n int) string {
 	return string(b)
 }
 
+func getKey(r *http.Request) string {
+	var key string
+	header := r.Header.Get("Authorization")
+	key = strings.Split(header, " ")[1]
+	if key == "" {
+		key = r.FormValue("key")
+	}
+	return key
+}
+
 func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
-		key := r.FormValue("key")
+		key := getKey(r)
 		useragent := r.Header.Get("User-Agent")
 		if key != s.key {
 			fmt.Fprintf(w, "incorrect key")
