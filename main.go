@@ -77,7 +77,7 @@ func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
 		runHooks(abs)
 
 		fileUrl := s.url + "/" + newFile
-		if strings.Contains(useragent, "curl/") {
+		if strings.Contains(useragent, "curl/") || strings.Contains(useragent, "Igloo/") {
 			fmt.Fprintf(w, "%v", fileUrl)
 		} else {
 			http.Redirect(w, r, fileUrl, http.StatusSeeOther)
