@@ -5,8 +5,8 @@ Filehost server for https://x.icyphox.sh.
 
 (NON) FEATURES
 
-· Single-user
-· Only handles file upload. Serving is left to the reverse proxy.
+· Single-user.
+· Serves files from the storepath.
 · Bring your own index.html (-index flag)
 · Requires a key to upload. Change the default!
 · Filetype hooks. (See HOOKS)
