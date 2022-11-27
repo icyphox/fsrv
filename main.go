@@ -33,10 +33,13 @@ func randName(n int) string {
 
 func getKey(r *http.Request) string {
 	var key string
-	header := r.Header.Get("Authorization")
-	key = strings.Split(header, " ")[1]
+	key = r.FormValue("key")
 	if key == "" {
-		key = r.FormValue("key")
+		header := r.Header.Get("Authorization")
+		split := strings.Split(header, " ")
+		if len(split) == 2 {
+			key = split[1]
+		}
 	}
 	return key
 }
