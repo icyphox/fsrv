@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/alexedwards/flow"
 )
 
 type settings struct {
@@ -44,52 +46,55 @@ func getKey(r *http.Request) string {
 	return key
 }
 
-func (s *settings) uploadFile(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		key := getKey(r)
-		useragent := r.Header.Get("User-Agent")
-		if key != s.key {
-			fmt.Fprintf(w, "incorrect key")
-			log.Printf("incorrect key: %+v", key)
-			return
-		}
-		r.ParseMultipartForm(512 << 20)
-		file, handler, err := r.FormFile("file")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		defer file.Close()
-		log.Printf("file: %+v\t%+v bytes", handler.Filename, handler.Size)
-
-		ext := filepath.Ext(handler.Filename)
-		fileBytes, err := io.ReadAll(file)
-		if err != nil {
-			log.Println(err)
-		}
-
-		newFile := randName(5) + ext
-		diskFile := filepath.Join(s.storepath, newFile)
-		os.WriteFile(diskFile, fileBytes, 0644)
-		log.Printf("wrote: %+v", diskFile)
-		abs, err := filepath.Abs(diskFile)
-		if err != nil {
-			log.Println(err)
-		}
-		runHooks(abs)
-
-		fileUrl := s.url + "/" + newFile
-		if strings.Contains(useragent, "curl/") || strings.Contains(useragent, "Igloo/") {
-			fmt.Fprintf(w, "%v", fileUrl)
-		} else {
-			http.Redirect(w, r, fileUrl, http.StatusSeeOther)
-		}
-	case "GET":
-		http.ServeFile(w, r, s.index)
-	default:
-		fmt.Fprintf(w, "unsupported method")
+func (s *settings) upload(w http.ResponseWriter, r *http.Request) {
+	key := getKey(r)
+	useragent := r.Header.Get("User-Agent")
+	if key != s.key {
+		fmt.Fprintf(w, "incorrect key")
+		log.Printf("incorrect key: %+v", key)
+		return
 	}
+	r.ParseMultipartForm(512 << 20)
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer file.Close()
+	log.Printf("file: %+v\t%+v bytes", handler.Filename, handler.Size)
+
+	ext := filepath.Ext(handler.Filename)
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Println(err)
+	}
+
+	newFile := randName(5) + ext
+	diskFile := filepath.Join(s.storepath, newFile)
+	os.WriteFile(diskFile, fileBytes, 0644)
+	log.Printf("wrote: %+v", diskFile)
+	abs, err := filepath.Abs(diskFile)
+	if err != nil {
+		log.Println(err)
+	}
+	runHooks(abs)
+
+	fileUrl := s.url + "/" + newFile
+	if strings.Contains(useragent, "curl/") || strings.Contains(useragent, "Igloo/") {
+		fmt.Fprintf(w, "%v", fileUrl)
+	} else {
+		http.Redirect(w, r, fileUrl, http.StatusSeeOther)
+	}
+}
+
+func (s *settings) indexpage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, s.index)
+}
+
+func (s *settings) servefile(w http.ResponseWriter, r *http.Request) {
+	f := flow.Param(r.Context(), "file")
+	log.Printf("serving file: %s", f)
+	http.ServeFile(w, r, filepath.Join(s.storepath, f))
 }
 
 func (s *settings) readSettings() {
@@ -105,11 +110,15 @@ func (s *settings) readSettings() {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	mux := flow.New()
+
 	st := settings{}
 	st.readSettings()
 
-	http.HandleFunc("/", st.uploadFile)
+	mux.HandleFunc("/", st.upload, "POST")
+	mux.HandleFunc("/", st.indexpage, "GET")
+	mux.HandleFunc("/:file", st.servefile, "GET")
 
 	log.Println("listening on " + st.addr)
-	http.ListenAndServe(st.addr, nil)
+	http.ListenAndServe(st.addr, mux)
 }
