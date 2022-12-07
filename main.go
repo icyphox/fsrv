@@ -91,12 +91,6 @@ func (s *settings) indexpage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, s.index)
 }
 
-func (s *settings) servefile(w http.ResponseWriter, r *http.Request) {
-	f := flow.Param(r.Context(), "file")
-	log.Printf("serving file: %s", f)
-	http.ServeFile(w, r, filepath.Join(s.storepath, f))
-}
-
 func (s *settings) readSettings() {
 	flag.StringVar(&s.url, "url", "localhost", "url for fsrv to serve files")
 	flag.StringVar(&s.addr, "addr", "0.0.0.0:9393", "address to listen on")
@@ -117,7 +111,7 @@ func main() {
 
 	mux.HandleFunc("/", st.upload, "POST")
 	mux.HandleFunc("/", st.indexpage, "GET")
-	mux.HandleFunc("/:file", st.servefile, "GET")
+	mux.Handle("/...", http.FileServer(nodirFileSystem{http.Dir(st.storepath)}))
 
 	log.Println("listening on " + st.addr)
 	http.ListenAndServe(st.addr, mux)
